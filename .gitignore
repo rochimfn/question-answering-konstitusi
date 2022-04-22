@@ -1,0 +1,4 @@
+venv/
+rc_ta.egg-info/
+__pycache__/
+.ipynb_checkpoints
