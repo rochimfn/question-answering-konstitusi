@@ -1,19 +1,27 @@
+import json
 from difflib import get_close_matches
 from pathlib import Path
+from typing import List, Optional, TypedDict
+
 import requests
-import json
+
+
+class ReturnType(TypedDict):
+    word: str
+    exists: bool
+    suggestion: Optional[List[Optional[str]]]
 
 
 class Proofing:
     dict_file = Path('.cache/dictionary.txt')
     dict_url = 'https://raw.githubusercontent.com/rochimfn/' + \
-        'kamus-kata-indonesia/main/manual-kamus-indonesia.txt'
-    dict = None
+               'kamus-kata-indonesia/main/manual-kamus-indonesia.txt'
+    dict: Optional[List[str]] = None
 
     custom_dict_file = Path('.cache/custom_dict.json')
     custom_dict_url = 'https://gist.githubusercontent.com/rochimfn/' + \
-        '07e9c789ab1effb1de262e2d065ab400/' + \
-        'raw/91367da962eba01a5176c9cf2b425f876e77086f/custom_dict.json'
+                      '07e9c789ab1effb1de262e2d065ab400/' + \
+                      'raw/91367da962eba01a5176c9cf2b425f876e77086f/custom_dict.json'
     custom_dict = None
 
     def __init__(self):
@@ -38,11 +46,11 @@ class Proofing:
         with open(self.custom_dict_file, 'r') as f:
             self.custom_dict = json.loads(f.read())
 
-    def suggest(self, word):
+    def suggest(self, word: str) -> List[Optional[str]]:
         dict_subset = [w for w in self.dict if w.startswith(word[0])]
         return get_close_matches(word, dict_subset, cutoff=0.8)
 
-    def check_word(self, word):
+    def check_word(self, word: str) -> ReturnType:
         if len(word) == 0:
             return {'word': word, 'exists': False, 'suggestion': []}
 
@@ -50,14 +58,14 @@ class Proofing:
             word = self.custom_dict[word]
 
         if word.lower() in self.dict:
-            return {'word': word, 'exists': True}
+            return {'word': word, 'exists': True, 'suggestion': []}
         else:
             suggestion = self.suggest(word.lower())
             return {'word': word, 'exists': False, 'suggestion': suggestion}
 
-    def check_words(self, words):
+    def check_words(self, words: str) -> List[Optional[ReturnType]]:
         if len(words) == 0:
-            return {'exists': False, 'suggestion': []}
+            return []
         return [self.check_word(word) for word in words.split(' ')]
 
 
