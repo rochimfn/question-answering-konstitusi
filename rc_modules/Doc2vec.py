@@ -1,40 +1,77 @@
-from pathlib import Path
-from sklearn.metrics.pairwise import cosine_similarity
-import gensim
-import pandas as pd
-import pickle
 import logging
+import pickle
+from pathlib import Path
+from typing import Iterable, TypedDict, Optional, List
 
+import pandas as pd
+from gensim.models import doc2vec
+from gensim.utils import simple_preprocess
+from sklearn.metrics.pairwise import cosine_similarity
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
 
 
+class Doc2vecOptions(TypedDict):
+    vector_size: int
+    min_count: int
+    epochs: int
+
+
 class Doc2vec:
-    default_options = {
-        'vector_size': 50,
-        'min_count': 2,
-        'epochs': 40
-    }
+    def __init__(self, cache: Optional[str] = None):
+        self.model: Optional[doc2vec.Doc2Vec] = None
+        self.dataframe: Optional[pd.DataFrame] = None
+        self.dataset_key: Optional[str] = None
+        if cache is not None:
+            self.__load_cache(cache)
+        self.options: Doc2vecOptions = {
+            'vector_size': 50,
+            'min_count': 2,
+            'epochs': 40
+        }
 
-    def __init__(self, dataframe: pd.DataFrame = None,
-                 dataset_key: str = 'dataset',
-                 option=default_options):
-        self.dataframe = dataframe.copy() if dataframe is not None else None
-        self.dataset_key = dataset_key
-        self.options = option
-        self.model = None
+    def __load_cache(self, path: str):
+        dataframe_path = Path(path, 'doc2vec_dataframe')
+        dataframe_exist = dataframe_path.is_file()
 
-    def __read_corpus(self, corpus):
+        dataset_key_path = Path(path, 'doc2vec_dataset_key')
+        dataset_key_exist = dataset_key_path.is_file()
+
+        model_path = Path(path, 'doc2vec_model')
+        model_exist = model_path.is_file()
+        if not (dataframe_exist and dataset_key_exist and model_exist):
+            raise Exception('Cache not found')
+
+        self.dataframe: pd.DataFrame = pd.read_pickle(dataframe_path)
+        with open(dataset_key_path, 'rb') as fd:
+            self.dataset_key: str = pickle.load(fd)
+        self.model: doc2vec.Doc2Vec = doc2vec.Doc2Vec.load(str(model_path))
+
+    def set_dataframe(self, dataframe: pd.DataFrame, dataset_key: str = 'dataset'):
+        if self.model is None:
+            self.dataframe = dataframe.copy()
+            self.dataset_key = dataset_key
+        else:
+            raise Exception(
+                'Cannot set dataframe when model is already fitted')
+
+    def set_options(self, options: Doc2vecOptions):
+        self.options = options
+
+    def __read_corpus(self, corpus: Iterable):
         for i, line in enumerate(corpus):
-            tokens = gensim.utils.simple_preprocess(line)
-            yield gensim.models.doc2vec.TaggedDocument(tokens, [i])
+            tokens = simple_preprocess(line)
+            yield doc2vec.TaggedDocument(tokens, [i])
 
     def __train(self, retrain=False):
+        if self.dataframe is None or self.dataset_key is None:
+            raise Exception('Dataframe and dataset key is None')
+
         if retrain or self.model is None:
             train_corpus = list(self.__read_corpus(
                 self.dataframe[self.dataset_key]))
-            model = gensim.models.doc2vec.Doc2Vec(
+            model = doc2vec.Doc2Vec(
                 vector_size=self.options['vector_size'],
                 min_count=self.options['min_count'],
                 epochs=self.options['epochs'])
@@ -43,77 +80,37 @@ class Doc2vec:
                         epochs=model.epochs)
             self.model = model
 
-    def infer_vector(self, sentence):
+    def infer_vector(self, sentence: List[str]):
         self.__train()
-        words = []
-        if isinstance(sentence, str):
-            words = sentence.split()
-        elif isinstance(sentence, list):
-            words = sentence
-        return self.model.infer_vector(words)
+        if not isinstance(sentence, list):
+            raise Exception("Wrong sentence data type! Use <class 'list'>")
+        return self.model.infer_vector(sentence)
 
     def __gen_vector(self):
         self.__train()
         self.dataframe['vector'] = self.dataframe[self.dataset_key].apply(
             lambda x: self.infer_vector(x.split(' ')))
 
-    # def ask(self, query, num_rank=10):
-    #     words = []
-    #     if isinstance(query, str):
-    #         words = query.split()
-    #     elif isinstance(query, list):
-    #         words = query
-    #     else:
-    #         return None
-
-    #     self.__gen_vector()
-    #     index = gensim.similarities.SparseMatrixSimilarity(
-    #         self.dataframe['vector'],
-    #         num_features=self.options['vector_size'])
-    #     sims = index[self.infer_vector(words)]
-    #     top_idx = sims.argsort()[-1*num_rank:][::-1]
-
-    #     return self.dataframe.loc[top_idx, :]
-
-    def ask(self, query, num_rank=10):
-        words = []
-        if isinstance(query, str):
-            words = query.split()
-        elif isinstance(query, list):
-            words = query
-        else:
-            return None
+    def ask(self, query: str, num_rank=10):
+        if not isinstance(query, str):
+            raise Exception("Wrong query data type! Use 'str'")
 
         self.__gen_vector()
-
         self.dataframe['Similarity'] = self.dataframe['vector'].apply(lambda x: cosine_similarity(
-            x.reshape(1, -1), self.infer_vector(words).reshape(1, -1)).item())
+            x.reshape(1, -1), self.infer_vector(query.split(' ')).reshape(1, -1)).item())
 
         return self.dataframe.sort_values(
             by='Similarity', ascending=False).head(num_rank).copy()
 
-    def __save_dataframe(self, path):
-        self.dataframe.to_pickle(path + '_dataframe')
-        with open(Path(path + '_dataset_key'), 'wb') as fd:
-            pickle.dump(self.dataset_key, fd)
+    def create_cache(self, path: str):
+        cache_path = Path(path)
+        path_not_exist = not cache_path.is_dir()
+        if path_not_exist:
+            cache_path.mkdir(parents=True, exist_ok=True)
 
-    def __save_model(self, path):
-        with open(Path(path), 'wb') as fd:
-            self.model.save(fd)
-
-    def save(self, path):
         self.__train()
-        self.__save_model(path)
-        self.__save_dataframe(path)
-
-    def __load_dataframe(self, path):
-        self.dataframe = pd.read_pickle(path + '_dataframe')
-        with open(Path(path + '_dataset_key'), 'rb') as fd:
-            self.dataset_key = pickle.load(fd)
-
-    def __load_model(self, path):
-        self.model = gensim.models.doc2vec.Doc2Vec.load(path)
-
-    def load(self, path):
-        self.__load_model(path)
-        self.__load_dataframe(path)
+        with open(Path(path, 'doc2vec_model'), 'wb') as fd:
+            self.model.save(fd)
+        self.dataframe.to_pickle(str(Path(path, 'doc2vec_dataframe')))
+        with open(Path(path, 'doc2vec_dataset_key'), 'wb') as fd:
+            pickle.dump(self.dataset_key, fd)

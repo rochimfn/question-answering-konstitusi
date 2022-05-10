@@ -1,7 +1,8 @@
-import pandas as pd
 import logging
 
-from rc_modules import Doc2vec, Tfidf, Word2vec
+import pandas as pd
+
+from rc_modules import Doc2vec, Word2vec, Tfidf
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -16,14 +17,18 @@ def load_data():
 
 def main():
     df = load_data()
-    doc2vec = Doc2vec(df, 'dataset')
-    doc2vec.save('.cache/model_doc2vec')
 
-    word2vec = Word2vec(df, 'dataset')
-    word2vec.save('.cache/model_word2vec')
+    tfidf = Tfidf()
+    tfidf.set_dataframe(dataframe=df, dataset_key='dataset')
+    tfidf.create_cache('.cache/tfidf')
 
-    tfidf = Tfidf(df, 'dataset')
-    tfidf.save('.cache/model_tfidf')
+    doc2vec = Doc2vec()
+    doc2vec.set_dataframe(dataframe=df, dataset_key='dataset')
+    doc2vec.create_cache('.cache/doc2vec')
+
+    word2vec = Word2vec()
+    word2vec.set_dataframe(dataframe=df, dataset_key='dataset')
+    word2vec.create_cache('.cache/word2vec')
 
 
 if __name__ == '__main__':
