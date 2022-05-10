@@ -1,10 +1,14 @@
+import logging
 from typing import Optional
 
 import pandas as pd
-from fastapi import FastAPI, Response, status
 import uvicorn
+from fastapi import FastAPI, Response, status
 
 from rc_modules import Doc2vec, Tfidf, Word2vec
+
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
+                    level=logging.INFO)
 
 app = FastAPI()
 
@@ -51,5 +55,6 @@ async def ask(response: Response, algorithm: str, q: Optional[str] = None):
                     'answer': answer['Response'].item()
                 }}
 
+
 if __name__ == "__main__":
-    uvicorn.run("web:app", host="0.0.0.0", port=8000)
+    uvicorn.run("web:app", host="0.0.0.0", port=8000, log_config=None)
