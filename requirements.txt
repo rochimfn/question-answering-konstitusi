@@ -1,8 +1,10 @@
 autopep8==1.6.0
+fastapi==0.77.1
 gensim==3.8.3
 numpy==1.22.3
 pandas==1.4.2
 requests==2.27.1
 scikit-learn==1.0.2
 streamlit==1.9.0
+uvicorn[standard]==0.17.6
 XlsxWriter==3.0.3
