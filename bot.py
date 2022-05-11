@@ -2,8 +2,9 @@ import logging
 from textwrap import dedent
 
 import pandas as pd
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, ConversationHandler, CallbackContext, MessageHandler, Filters
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram.ext import Updater, CommandHandler, ConversationHandler, CallbackContext, MessageHandler, Filters, \
+    PicklePersistence
 
 from rc_modules import Tfidf
 
@@ -13,6 +14,16 @@ logger = logging.getLogger(__name__)
 
 TOKEN = ''
 ASK_STATE = 1
+SETTING_STATE = 101
+SUPPORTED_ALGORITHM = ('tfidf', 'word2vec', 'doc2vec')
+DEFAULT_ALGORITHM = 'tfidf'
+
+_LIST_COMMAND = """ \
+mulai      - Mulai menggunakan bot
+tanya      - Bertanya tentang konstitusi
+pengaturan - Mengatur algoritma
+bantuan    - Menampilkan bantuan
+"""
 
 tfidf = Tfidf(cache='.cache/tfidf')
 
@@ -25,9 +36,10 @@ def start(update, context):
     Bot ini akan membantu anda menjawab pertanyaan tentang konstitusi Indonesia.
     
     Perintah tersedia:
-    /mulai    - manampilkan pesan ini.
-    /tanya    - bertanya tentang konstitusi.
-    /bantuan  - untuk menampilkan bantuan.'''
+    /mulai      - manampilkan pesan ini.
+    /tanya      - bertanya tentang konstitusi.
+    /pengaturan - mengatur algoritma.
+    /bantuan    - untuk menampilkan bantuan.'''
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=dedent(welcome))
@@ -39,9 +51,10 @@ def help(update: Update, context: CallbackContext):
     Bot ini akan membantu anda menjawab pertanyaan tentang konstitusi Indonesia.
     
     Perintah tersedia:
-    /mulai    - manampilkan pesan ini.
-    /tanya    - bertanya tentang konstitusi.
-    /bantuan  - untuk menampilkan bantuan.'''
+    /mulai      - manampilkan pesan ini.
+    /tanya      - bertanya tentang konstitusi.
+    /pengaturan - mengatur algoritma.
+    /bantuan    - untuk menampilkan bantuan.'''
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=dedent(help))
@@ -64,6 +77,10 @@ def cancel_ask(update: Update, context: CallbackContext) -> int:
 
 
 def ask(update: Update, context: CallbackContext) -> int:
+    algorithm = DEFAULT_ALGORITHM
+    if 'algorithm' in context.user_data \
+            and context.user_data['algorithm'] in SUPPORTED_ALGORITHM:
+        algorithm = context.user_data['algorithm']
     query = update.message.text
     answer: pd.DataFrame = tfidf.ask(query=query, num_rank=1)
     answer['Response'].item()
@@ -74,8 +91,51 @@ def ask(update: Update, context: CallbackContext) -> int:
             
             Jawaban:
             {answer['Response'].item()}
+            
+            Algoritma digunakan: {algorithm}
             '''
     update.message.reply_text(dedent(response))
+
+    return ConversationHandler.END
+
+
+def start_setting(update: Update, context: CallbackContext) -> int:
+    reply_keyboard = [SUPPORTED_ALGORITHM]
+    response = '''\
+        Pilih algoritma untuk Question Answering!
+        
+        Gunakan perintah /batal untuk membatalkan.'''
+    update.message.reply_text(
+        dedent(response),
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard, one_time_keyboard=True, input_field_placeholder='Algoritma?'
+        ))
+
+    return SETTING_STATE
+
+
+def setting(update: Update, context: CallbackContext) -> int:
+    text = update.message.text.lower()
+    if text not in SUPPORTED_ALGORITHM:
+        reply_keyboard = [SUPPORTED_ALGORITHM]
+        response = '''\
+            Algoritma tidak diketahui, silahkan pilih ulang!
+            Gunakan perintah /batal untuk membatalkan.'''
+
+        update.message.reply_text(
+            dedent(response),
+            reply_markup=ReplyKeyboardMarkup(
+                reply_keyboard, one_time_keyboard=True, input_field_placeholder='Algoritma?'
+            ))
+        return SETTING_STATE
+    else:
+        context.user_data['algorithm'] = text
+        response = f'''\
+                Algoritma berhasil diubah ke {text}
+                '''
+        update.message.reply_text(
+            dedent(response),
+            reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
 
@@ -85,22 +145,31 @@ def error(update, context):
 
 
 def main():
-    updater = Updater(TOKEN)
+    persistence = PicklePersistence(filename='.cache/data/bot')
+    updater = Updater(TOKEN, persistence=persistence)
     dispatcher = updater.dispatcher
 
     start_handler = CommandHandler(['start', 'mulai'], start)
     help_handler = CommandHandler(['help', 'bantuan'], help)
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('tanya', start_ask)],
+    ask_handler = ConversationHandler(
+        entry_points=[CommandHandler(['ask', 'tanya'], start_ask)],
         states={
             ASK_STATE: [MessageHandler(Filters.text & ~Filters.command, ask)],
         },
-        fallbacks=[CommandHandler(['batal', 'cancel'], cancel_ask)],
+        fallbacks=[CommandHandler(['cancel', 'batal'], cancel_ask)],
+    )
+    setting_handler = ConversationHandler(
+        entry_points=[CommandHandler(['setting', 'pengaturan'], start_setting)],
+        states={
+            SETTING_STATE: [MessageHandler(Filters.text & ~Filters.command, setting)],
+        },
+        fallbacks=[CommandHandler(['cancel', 'batal'], cancel_ask)],
     )
 
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(help_handler)
-    dispatcher.add_handler(conv_handler)
+    dispatcher.add_handler(ask_handler)
+    dispatcher.add_handler(setting_handler)
 
     dispatcher.add_error_handler(error)
 
