@@ -1,18 +1,17 @@
 import logging
 from textwrap import dedent
 
-import pandas as pd
+import requests
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, ConversationHandler, CallbackContext, MessageHandler, Filters, \
     PicklePersistence
-
-from rc_modules import Tfidf
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 TOKEN = ''
+QA_SERVICE_ENDPOINT = 'http://127.0.0.1:8000'
 ASK_STATE = 1
 SETTING_STATE = 101
 SUPPORTED_ALGORITHM = ('tfidf', 'word2vec', 'doc2vec')
@@ -24,8 +23,6 @@ tanya      - Bertanya tentang konstitusi
 pengaturan - Mengatur algoritma
 bantuan    - Menampilkan bantuan
 """
-
-tfidf = Tfidf(cache='.cache/tfidf')
 
 
 def start(update, context):
@@ -77,20 +74,25 @@ def cancel_ask(update: Update, context: CallbackContext) -> int:
 
 
 def ask(update: Update, context: CallbackContext) -> int:
+    query = update.message.text
     algorithm = DEFAULT_ALGORITHM
     if 'algorithm' in context.user_data \
             and context.user_data['algorithm'] in SUPPORTED_ALGORITHM:
         algorithm = context.user_data['algorithm']
-    query = update.message.text
-    answer: pd.DataFrame = tfidf.ask(query=query, num_rank=1)
-    answer['Response'].item()
+    params = {'q': query}
+    r = requests.get(QA_SERVICE_ENDPOINT + f'/{algorithm}', params=params)
+    if r.status_code != 200:
+        update.message.reply_text(
+            'Sistem sedang gangguan, silahkan coba lagi nanti')
+
+    answer = r.json()['data']['answer']
 
     response = f'''\
             Pertanyaan:
             {query}
             
             Jawaban:
-            {answer['Response'].item()}
+            {answer}
             
             Algoritma digunakan: {algorithm}
             '''
