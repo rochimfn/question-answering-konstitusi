@@ -1,3 +1,0 @@
-[] loop over vector length
-[] loop over number of iteration
-[] is the question mark need to be removed?
