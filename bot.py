@@ -84,6 +84,7 @@ def ask(update: Update, context: CallbackContext) -> int:
     if r.status_code != 200:
         update.message.reply_text(
             'Sistem sedang gangguan, silahkan coba lagi nanti')
+        return ConversationHandler.END
 
     answer = r.json()['data']['answer']
 
