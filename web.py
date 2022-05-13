@@ -23,37 +23,38 @@ async def root():
             'data': []}
 
 
+def success_response(data: dict) -> dict:
+    return {'status': 'success',
+            'data': data}
+
+
+def fail_response(data: dict) -> dict:
+    return {'status': 'fail',
+            'data': data}
+
+
 @app.get('/{algorithm}/', status_code=200)
 async def ask(response: Response, algorithm: str, q: Optional[str] = None):
+    answer = pd.DataFrame()
     if algorithm not in ('tfidf', 'word2vec', 'doc2vec'):
         response.status_code = status.HTTP_400_BAD_REQUEST
-        return {'status': 'fail',
-                'data': {'algorithm': 'Supported algorithm: tfidf, word2vec, doc2vec'}}
+        return fail_response({'algorithm': 'Supported algorithm: tfidf, word2vec, doc2vec'})
     if q is None:
         response.status_code = status.HTTP_400_BAD_REQUEST
-        return {'status': 'fail',
-                'data': {'q': 'Question is required!'}}
+        return fail_response({'q': 'Question is required!'})
     if algorithm == 'tfidf':
-        answer: pd.DataFrame = tfidf.ask(query=q, num_rank=1)
-        return {'status': 'success',
-                'data': {
-                    'question': q,
-                    'answer': answer['Response'].item()
-                }}
+        answer: pd.DataFrame = tfidf.ask(query=q, num_rank=10)
     elif algorithm == 'word2vec':
-        answer: pd.DataFrame = word2vec.ask(query=q, num_rank=1)
-        return {'status': 'success',
-                'data': {
-                    'question': q,
-                    'answer': answer['Response'].item()
-                }}
+        answer: pd.DataFrame = word2vec.ask(query=q, num_rank=10)
     elif algorithm == 'doc2vec':
-        answer: pd.DataFrame = doc2vec.ask(query=q, num_rank=1)
-        return {'status': 'success',
-                'data': {
-                    'question': q,
-                    'answer': answer['Response'].item()
-                }}
+        answer: pd.DataFrame = doc2vec.ask(query=q, num_rank=10)
+    if not answer.empty:
+        answer['Rank'] = answer.reset_index().index + 1
+        data = {
+            'question': q,
+            'answer': answer.iloc[[0]]['Response'].item()
+        }
+        return success_response(data)
 
 
 if __name__ == "__main__":
