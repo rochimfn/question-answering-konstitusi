@@ -41,9 +41,9 @@ def main():
     question = st.text_input(
         label='Masukkan pertanyaan tentang konsititusi',
         value='Apa tugas lembaga negara')
-    show_tfidf = st.checkbox('Tfidf')
-    show_doc2vec = st.checkbox('Doc2vec')
-    show_word2vec = st.checkbox('Word2vec')
+    show_tfidf = st.checkbox('Tfidf', value=True)
+    show_doc2vec = st.checkbox('Doc2vec', value=True)
+    show_word2vec = st.checkbox('Word2vec', value=True)
 
     if st.button('Tanyakan'):
         result = pre_process(question)
