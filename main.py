@@ -1,6 +1,7 @@
 import logging
 from typing import TypedDict, Optional, List
 
+import pandas as pd
 import streamlit as st
 
 from rc_modules import Proofing, Doc2vec, Tfidf, Word2vec, ReturnType
@@ -49,24 +50,21 @@ def main():
         if result['correct'] is not True:
             handle_not_proof(question, result['false_word'])
         else:
-            answer = tfidf.ask(question)
-            answer['Rank'] = answer.reset_index().index + 1
-
-            answer = doc2vec.ask(question)
-            answer['Rank'] = answer.reset_index().index + 1
-
-            answer = word2vec.ask(question)
-            answer['Rank'] = answer.reset_index().index + 1
-
             if show_tfidf:
+                answer: pd.DataFrame = tfidf.ask(question)
+                answer['Rank'] = answer.reset_index().index + 1
                 st.subheader('Tfidf')
                 st.table(answer[['Rank', 'Response', 'Similarity']])
 
             if show_doc2vec:
+                answer: pd.DataFrame = doc2vec.ask(question)
+                answer['Rank'] = answer.reset_index().index + 1
                 st.subheader('Doc2vec')
                 st.table(answer[['Rank', 'Response', 'Similarity']])
 
             if show_word2vec:
+                answer: pd.DataFrame = word2vec.ask(question)
+                answer['Rank'] = answer.reset_index().index + 1
                 st.subheader('Word2vec')
                 st.table(answer[['Rank', 'Response', 'Similarity']])
 
