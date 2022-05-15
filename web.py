@@ -43,11 +43,11 @@ async def ask(response: Response, algorithm: str, q: Optional[str] = None):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return fail_response({'q': 'Question is required!'})
     if algorithm == 'tfidf':
-        answer: pd.DataFrame = tfidf.ask(query=q, num_rank=10)
+        answer: pd.DataFrame = tfidf.ask(query=q, num_rank=1)
     elif algorithm == 'word2vec':
-        answer: pd.DataFrame = word2vec.ask(query=q, num_rank=10)
+        answer: pd.DataFrame = word2vec.ask(query=q, num_rank=1)
     elif algorithm == 'doc2vec':
-        answer: pd.DataFrame = doc2vec.ask(query=q, num_rank=10)
+        answer: pd.DataFrame = doc2vec.ask(query=q, num_rank=1)
     if not answer.empty:
         answer['Rank'] = answer.reset_index().index + 1
         data = {
