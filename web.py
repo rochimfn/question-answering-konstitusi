@@ -12,9 +12,11 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
 
 app = FastAPI()
 
-tfidf = Tfidf(cache='.cache/tfidf')
-word2vec = Word2vec(cache='.cache/word2vec')
-doc2vec = Doc2vec(cache='.cache/doc2vec')
+models = {
+    'tfidf': Tfidf(cache='.cache/tfidf'),
+    'doc2vec': Doc2vec(cache='.cache/doc2vec'),
+    'word2vec': Word2vec(cache='.cache/word2vec')
+}
 
 
 @app.get('/')
@@ -35,21 +37,16 @@ def fail_response(data: dict) -> dict:
 
 @app.get('/{algorithm}/', status_code=200)
 async def ask(response: Response, algorithm: str, q: Optional[str] = None):
-    answer = pd.DataFrame()
     if algorithm not in ('tfidf', 'word2vec', 'doc2vec'):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return fail_response({'algorithm': 'Supported algorithm: tfidf, word2vec, doc2vec'})
+
     if q is None:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return fail_response({'q': 'Question is required!'})
-    if algorithm == 'tfidf':
-        answer: pd.DataFrame = tfidf.ask(query=q, num_rank=1)
-    elif algorithm == 'word2vec':
-        answer: pd.DataFrame = word2vec.ask(query=q, num_rank=1)
-    elif algorithm == 'doc2vec':
-        answer: pd.DataFrame = doc2vec.ask(query=q, num_rank=1)
+
+    answer: pd.DataFrame = models[algorithm].ask(query=q, num_rank=1)
     if not answer.empty:
-        answer['Rank'] = answer.reset_index().index + 1
         data = {
             'question': q,
             'answer': answer.iloc[[0]]['Response'].item()
