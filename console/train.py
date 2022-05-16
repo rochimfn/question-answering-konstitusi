@@ -18,17 +18,10 @@ def load_data():
 def main():
     df = load_data()
 
-    tfidf = Tfidf()
-    tfidf.set_dataframe(dataframe=df, dataset_key='dataset')
-    tfidf.create_cache('.cache/tfidf')
-
-    doc2vec = Doc2vec()
-    doc2vec.set_dataframe(dataframe=df, dataset_key='dataset')
-    doc2vec.create_cache('.cache/doc2vec')
-
-    word2vec = Word2vec()
-    word2vec.set_dataframe(dataframe=df, dataset_key='dataset')
-    word2vec.create_cache('.cache/word2vec')
+    models = {'tfidf': Tfidf(), 'doc2vec': Doc2vec(), 'word2vec': Word2vec()}
+    for name, model in models.items():
+        model.set_dataframe(dataframe=df, dataset_key='dataset')
+        model.create_cache(f'.cache/{name}')
 
 
 if __name__ == '__main__':
