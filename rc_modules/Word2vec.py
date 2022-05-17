@@ -83,14 +83,14 @@ class Word2vec:
 
     def __infer_vector(self, sentences: List[str]):
         if len(sentences) < 1:
-            return np.zeros(50)
+            return np.zeros(self.options['size'])
         else:
             vector = []
             for word in sentences:
                 if word in self.model.wv:
                     vector.append(self.model.wv[word])
                 else:
-                    vector.append(np.zeros(50))
+                    vector.append(np.zeros(self.options['size']))
 
             return np.mean(vector, axis=0)
 
