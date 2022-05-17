@@ -20,7 +20,7 @@ def load_data():
     else:
         url = 'https://raw.githubusercontent.com/rochimfn/tanyahukum-bot/main/dataset.csv'
         df = pd.read_csv(url, sep='\t', quotechar='\'')
-        df['dataset'] = df['Context'] + ' ' + df['Response']
+        df['dataset'] = df['Keywords'] + ' ' + df['Context'] + ' ' + df['Response']
         df.to_pickle('.cache/dataframe')
         return df
 
