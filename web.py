@@ -1,4 +1,5 @@
 import logging
+from os import environ
 from typing import Optional
 
 import pandas as pd
@@ -9,6 +10,9 @@ from rc_modules import Doc2vec, Tfidf, Word2vec
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
+
+QA_HOST = environ['QA_HOST']
+QA_PORT = int(environ['QA_PORT'])
 
 app = FastAPI()
 
@@ -55,4 +59,4 @@ async def ask(response: Response, algorithm: str, q: Optional[str] = None):
 
 
 if __name__ == "__main__":
-    uvicorn.run("web:app", host="0.0.0.0", port=8000, log_config=None)
+    uvicorn.run("web:app", host=QA_HOST, port=QA_PORT, log_config=None)

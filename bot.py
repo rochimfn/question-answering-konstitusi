@@ -1,4 +1,5 @@
 import logging
+from os import environ
 from textwrap import dedent
 
 import requests
@@ -10,8 +11,9 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOKEN = ''
-QA_SERVICE_ENDPOINT = 'http://127.0.0.1:8000'
+BOT_TOKEN = environ['BOT_TOKEN']
+QA_HOST = environ['QA_HOST']
+QA_PORT = environ['QA_PORT']
 ASK_STATE = 1
 SETTING_STATE = 101
 SUPPORTED_ALGORITHM = ('tfidf', 'word2vec', 'doc2vec')
@@ -80,7 +82,7 @@ def ask(update: Update, context: CallbackContext) -> int:
             and context.user_data['algorithm'] in SUPPORTED_ALGORITHM:
         algorithm = context.user_data['algorithm']
     params = {'q': query}
-    r = requests.get(QA_SERVICE_ENDPOINT + f'/{algorithm}', params=params)
+    r = requests.get(f'http://{QA_HOST}:{QA_PORT}/{algorithm}', params=params)
     if r.status_code != 200:
         update.message.reply_text(
             'Sistem sedang gangguan, silahkan coba lagi nanti')
@@ -149,7 +151,7 @@ def error(update, context):
 
 def main():
     persistence = PicklePersistence(filename='.cache/data/bot')
-    updater = Updater(TOKEN, persistence=persistence)
+    updater = Updater(BOT_TOKEN, persistence=persistence)
     dispatcher = updater.dispatcher
 
     start_handler = CommandHandler(['start', 'mulai'], start)
