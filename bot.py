@@ -1,5 +1,6 @@
 import logging
 from os import environ
+from pathlib import Path
 from textwrap import dedent
 
 import requests
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN = environ['BOT_TOKEN']
 QA_HOST = environ['QA_HOST']
 QA_PORT = environ['QA_PORT']
+DATA_DIR = '.cache/data/'
 ASK_STATE = 1
 SETTING_STATE = 101
 SUPPORTED_ALGORITHM = ('tfidf', 'word2vec', 'doc2vec')
@@ -150,6 +152,7 @@ def error(update, context):
 
 
 def main():
+    Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
     persistence = PicklePersistence(filename='.cache/data/bot')
     updater = Updater(BOT_TOKEN, persistence=persistence)
     dispatcher = updater.dispatcher
