@@ -4,7 +4,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import requests
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton
 from telegram.ext import Updater, CommandHandler, ConversationHandler, CallbackContext, MessageHandler, Filters, \
     PicklePersistence
 
@@ -109,7 +109,7 @@ def ask(update: Update, context: CallbackContext) -> int:
 
 
 def start_setting(update: Update, context: CallbackContext) -> int:
-    reply_keyboard = [SUPPORTED_ALGORITHM]
+    reply_keyboard = [SUPPORTED_ALGORITHM, ['/batal']]
     response = '''\
         Pilih algoritma untuk Question Answering!
         
