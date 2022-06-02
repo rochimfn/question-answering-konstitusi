@@ -94,16 +94,10 @@ def ask(update: Update, context: CallbackContext) -> int:
 
     answer = r.json()['data']['answer']
 
-    response = f'''\
-            Pertanyaan:
-            {query}
-            
-            Jawaban:
-            {answer}
-            
-            Algoritma digunakan: {algorithm}
-            '''
-    update.message.reply_text(dedent(response))
+    response = f'Pertanyaan: \n{query}\n\n'
+    response += f'Jawaban: \n{answer}\n\n'
+    response += f'Algoritma digunakan: {algorithm}'
+    update.message.reply_text(response)
 
     return ConversationHandler.END
 
