@@ -72,7 +72,9 @@ def start_ask(update: Update, context: CallbackContext) -> int:
 
 
 def cancel_ask(update: Update, context: CallbackContext) -> int:
-    update.message.reply_text('Perintah dibatalkan.')
+    update.message.reply_text(
+        'Perintah dibatalkan.',
+        reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
 
