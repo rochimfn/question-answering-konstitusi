@@ -11,7 +11,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
 def load_data():
     url = 'https://raw.githubusercontent.com/rochimfn/tanyahukum-bot/main/dataset.csv'
     df = pd.read_csv(url, sep='\t', quotechar='\'')
-    df['dataset'] = df['Context'] + ' ' + df['Response']
+    df['dataset'] = df['Context'] + ' ' + df['Keywords'] + ' ' + df['Response']
     return df
 
 
