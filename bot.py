@@ -4,7 +4,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import requests
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, ConversationHandler, CallbackContext, MessageHandler, Filters, \
     PicklePersistence
 
@@ -43,11 +43,12 @@ def start(update, context):
     /bantuan    - untuk menampilkan bantuan.'''
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=dedent(welcome))
+        text=dedent(welcome),
+        reply_markup=ReplyKeyboardRemove())
 
 
 def help(update: Update, context: CallbackContext):
-    help = '''\
+    help_message = '''\
     Bantuan
     Bot ini akan membantu anda menjawab pertanyaan tentang konstitusi Indonesia.
     
@@ -58,7 +59,9 @@ def help(update: Update, context: CallbackContext):
     /bantuan    - untuk menampilkan bantuan.'''
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=dedent(help))
+        text=dedent(help_message),
+        reply_markup=ReplyKeyboardRemove()
+    )
 
 
 def start_ask(update: Update, context: CallbackContext) -> int:
@@ -66,7 +69,9 @@ def start_ask(update: Update, context: CallbackContext) -> int:
         Silahkan kirimkan pertanyaan anda!
 
         Gunakan perintah /batal untuk membatalkan.'''
-    update.message.reply_text(dedent(response))
+    update.message.reply_text(
+        text=dedent(response),
+        reply_markup=ReplyKeyboardRemove())
 
     return ASK_STATE
 
@@ -163,7 +168,8 @@ def main():
         fallbacks=[CommandHandler(['cancel', 'batal'], cancel_ask)],
     )
     setting_handler = ConversationHandler(
-        entry_points=[CommandHandler(['setting', 'pengaturan'], start_setting)],
+        entry_points=[CommandHandler(
+            ['setting', 'pengaturan'], start_setting)],
         states={
             SETTING_STATE: [MessageHandler(Filters.text & ~Filters.command, setting)],
         },
