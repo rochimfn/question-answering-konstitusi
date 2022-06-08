@@ -66,6 +66,11 @@ def help(update: Update, context: CallbackContext):
 
 
 def start_ask(update: Update, context: CallbackContext) -> int:
+    message_list = update.message.text.split(' ')
+    if len(message_list) > 1:
+        query = ' '.join(message_list[1:])
+        return get_answer(query, update, context)
+
     response = '''\
         Silahkan kirimkan pertanyaan anda!
 
@@ -87,6 +92,10 @@ def cancel_ask(update: Update, context: CallbackContext) -> int:
 
 def ask(update: Update, context: CallbackContext) -> int:
     query = update.message.text
+    return get_answer(query, update, context)
+
+
+def get_answer(query: str,update: Update, context: CallbackContext) -> int:
     algorithm = DEFAULT_ALGORITHM
     if 'algorithm' in context.user_data \
             and context.user_data['algorithm'] in SUPPORTED_ALGORITHM:
@@ -105,7 +114,6 @@ def ask(update: Update, context: CallbackContext) -> int:
     response.append(f'Algoritma digunakan: {algorithm}')
 
     update.message.reply_text('\n\n'.join(response))
-
     return ConversationHandler.END
 
 
