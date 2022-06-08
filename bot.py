@@ -95,13 +95,14 @@ def ask(update: Update, context: CallbackContext) -> int:
     return get_answer(query, update, context)
 
 
-def get_answer(query: str,update: Update, context: CallbackContext) -> int:
+def get_answer(query: str, update: Update, context: CallbackContext) -> int:
     algorithm = DEFAULT_ALGORITHM
     if 'algorithm' in context.user_data \
             and context.user_data['algorithm'] in SUPPORTED_ALGORITHM:
         algorithm = context.user_data['algorithm']
 
-    r = requests.get(f'http://{QA_HOST}:{QA_PORT}/{algorithm}', params={'q': query, 'num_rank': NUM_RANK})
+    r = requests.get(f'http://{QA_HOST}:{QA_PORT}/{algorithm}',
+                     params={'q': query, 'num_rank': NUM_RANK})
     if r.status_code != 200:
         update.message.reply_text(
             'Sistem sedang gangguan, silahkan coba lagi nanti')
@@ -118,6 +119,11 @@ def get_answer(query: str,update: Update, context: CallbackContext) -> int:
 
 
 def start_setting(update: Update, context: CallbackContext) -> int:
+    message_list = update.message.text.split(' ')
+    if len(message_list) == 2 and message_list[1] in SUPPORTED_ALGORITHM:
+        algorithm = message_list[1]
+        return set_algorithm(algorithm, update, context)
+
     reply_keyboard = [SUPPORTED_ALGORITHM, ['/batal']]
     response = '''\
         Pilih algoritma untuk Question Answering!
@@ -147,13 +153,17 @@ def setting(update: Update, context: CallbackContext) -> int:
             ))
         return SETTING_STATE
     else:
-        context.user_data['algorithm'] = text
-        response = f'''\
-                Algoritma berhasil diubah ke {text}
-                '''
-        update.message.reply_text(
-            dedent(response),
-            reply_markup=ReplyKeyboardRemove())
+        return set_algorithm(text, update, context)
+
+
+def set_algorithm(algorithm: str, update: Update, context: CallbackContext) -> int:
+    context.user_data['algorithm'] = algorithm
+    response = f'''\
+            Algoritma berhasil diubah ke {algorithm}
+            '''
+    update.message.reply_text(
+        dedent(response),
+        reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
 
