@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN = environ['BOT_TOKEN']
 QA_HOST = environ['QA_HOST']
 QA_PORT = environ['QA_PORT']
+NUM_RANK = environ.get('NUM_RANK', 10)
 DATA_DIR = '.cache/data/'
 ASK_STATE = 1
 SETTING_STATE = 101
@@ -90,19 +91,20 @@ def ask(update: Update, context: CallbackContext) -> int:
     if 'algorithm' in context.user_data \
             and context.user_data['algorithm'] in SUPPORTED_ALGORITHM:
         algorithm = context.user_data['algorithm']
-    params = {'q': query}
-    r = requests.get(f'http://{QA_HOST}:{QA_PORT}/{algorithm}', params=params)
+
+    r = requests.get(f'http://{QA_HOST}:{QA_PORT}/{algorithm}', params={'q': query, 'num_rank': NUM_RANK})
     if r.status_code != 200:
         update.message.reply_text(
             'Sistem sedang gangguan, silahkan coba lagi nanti')
         return ConversationHandler.END
 
-    answer = r.json()['data']['answer']
+    answers = r.json()['data']['answer']
+    response = [f'Pertanyaan: \n{query}']
+    for i, answer in enumerate(answers):
+        response.append(f'Jawaban {i + 1}:\n{answer}')
+    response.append(f'Algoritma digunakan: {algorithm}')
 
-    response = f'Pertanyaan: \n{query}\n\n'
-    response += f'Jawaban: \n{answer}\n\n'
-    response += f'Algoritma digunakan: {algorithm}'
-    update.message.reply_text(response)
+    update.message.reply_text('\n\n'.join(response))
 
     return ConversationHandler.END
 

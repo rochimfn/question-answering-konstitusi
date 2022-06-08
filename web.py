@@ -40,7 +40,7 @@ def fail_response(data: dict) -> dict:
 
 
 @app.get('/{algorithm}/', status_code=200)
-async def ask(response: Response, algorithm: str, q: Optional[str] = None):
+async def ask(response: Response, algorithm: str, q: Optional[str] = None, num_rank: Optional[int] = 10):
     if algorithm not in ('tfidf', 'word2vec', 'doc2vec'):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return fail_response({'algorithm': 'Supported algorithm: tfidf, word2vec, doc2vec'})
@@ -49,11 +49,11 @@ async def ask(response: Response, algorithm: str, q: Optional[str] = None):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return fail_response({'q': 'Question is required!'})
 
-    answer: pd.DataFrame = models[algorithm].ask(query=q, num_rank=1)
+    answer: pd.DataFrame = models[algorithm].ask(query=q, num_rank=num_rank)
     if not answer.empty:
         data = {
             'question': q,
-            'answer': answer.iloc[[0]]['Response'].item()
+            'answer': answer['Response'].to_list()
         }
         return success_response(data)
 
