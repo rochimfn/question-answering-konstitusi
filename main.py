@@ -36,7 +36,7 @@ def handle_not_proof(question: str, false_word: List[Optional[ReturnType]]):
 
 def main():
     st.set_page_config(layout="wide")
-    st.title('Development tugas akhir')
+    st.title('Sistem Question Answering Konstitusi Indonesia')
 
     tfidf = Tfidf(cache='.cache/tfidf')
     word2vec = Word2vec(cache='.cache/word2vec')
