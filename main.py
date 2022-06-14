@@ -50,7 +50,7 @@ def main():
     show_word2vec = st.checkbox('Word2vec', value=True)
     show_doc2vec = st.checkbox('Doc2vec', value=True)
 
-    if st.button('Tanyakan'):
+    if st.button('Tanyakan') or question != 'Apa tugas lembaga negara' and len(question) > 1:
         result = pre_process(question) if ENABLE_PROOFING else False
         if ENABLE_PROOFING and result['correct'] is not True:
             handle_not_proof(question, result['false_word'])
