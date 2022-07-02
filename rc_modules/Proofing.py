@@ -1,15 +1,10 @@
 import json
 from difflib import get_close_matches
 from pathlib import Path
-from typing import List, Optional, TypedDict
+from typing import List, Optional
 
 import requests
-
-
-class ReturnType(TypedDict):
-    word: str
-    exists: bool
-    suggestion: Optional[List[Optional[str]]]
+from gensim.utils import simple_preprocess
 
 
 class Proofing:
@@ -22,7 +17,7 @@ class Proofing:
     custom_dict_url = 'https://gist.githubusercontent.com/rochimfn/' + \
                       '07e9c789ab1effb1de262e2d065ab400/' + \
                       'raw/91367da962eba01a5176c9cf2b425f876e77086f/custom_dict.json'
-    custom_dict = None
+    custom_dict: Optional[List[str]] = None
 
     def __init__(self):
         if not (self.dict_file.is_file() and self.custom_dict_file.is_file()):
@@ -50,23 +45,23 @@ class Proofing:
         dict_subset = [w for w in self.dict if w.startswith(word[0])]
         return get_close_matches(word, dict_subset, cutoff=0.8)
 
-    def check_word(self, word: str) -> ReturnType:
+    def check_word(self, word: str) -> str:
         if len(word) == 0:
-            return {'word': word, 'exists': False, 'suggestion': []}
-
-        if word in self.custom_dict:
-            word = self.custom_dict[word]
+            raise ValueError('Kata tidak boleh kosong!')
 
         if word.lower() in self.dict:
-            return {'word': word, 'exists': True, 'suggestion': []}
+            return word.lower()
+        elif word.lower() in self.custom_dict:
+            return self.custom_dict[word]
         else:
-            suggestion = self.suggest(word.lower())
-            return {'word': word, 'exists': False, 'suggestion': suggestion}
+            suggestion = ', '.join(self.suggest(word.lower()))
+            raise ValueError(
+                f'Kata "{word}" tidak ditemukan! \nMungkin maksud anda: {suggestion}')
 
-    def check_words(self, words: str) -> List[Optional[ReturnType]]:
+    def check_words(self, words: str) -> str:
         if len(words) == 0:
             return []
-        return [self.check_word(word) for word in words.split(' ')]
+        return ' '.join([self.check_word(word) for word in simple_preprocess(words)])
 
 
 if __name__ == '__main__':
