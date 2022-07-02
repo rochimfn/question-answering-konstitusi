@@ -72,20 +72,30 @@ if __name__ == '__main__':
     print(f'Word {word} in dictionary: {p.check_word(word)}')
 
     false_word = 'Pulagn'
-    print(f'Word {false_word} in dictionary: {p.check_word(false_word)}')
+    try:
+        print(f'Word {false_word} in dictionary: {p.check_word(false_word)}')
+    except ValueError as e:
+        print(e.args[0])
+
 
     sentence = 'Bapak pulang kampung'
     print(f'Kalimat : {sentence}')
     print(f'Hasil: {p.check_words(sentence)}')
 
-    false_sentence = 'Bapak pulagn kampung'
-    print(f'Kalimat : {false_sentence}')
-    print(f'Hasil: {p.check_words(false_sentence)}')
+    try:
+        false_sentence = 'Bapak pulagn kampung'
+        print(f'Kalimat : {false_sentence}')
+        print(f'Hasil: {p.check_words(false_sentence)}')
+    except ValueError as e:
+        print(e.args[0])
 
     another_sentence = 'bgmn bisa'
     print(f'Kalimat : {another_sentence}')
     print(f'Hasil: {p.check_words(another_sentence)}')
 
-    another_false_sentence = 'bg bisa'
-    print(f'Kalimat : {another_false_sentence}')
-    print(f'Hasil: {p.check_words(another_false_sentence)}')
+    try:
+        another_false_sentence = 'bg bisa'
+        print(f'Kalimat : {another_false_sentence}')
+        print(f'Hasil: {p.check_words(another_false_sentence)}')
+    except ValueError as e:
+        print(e.args[0])
