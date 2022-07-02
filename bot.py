@@ -7,6 +7,9 @@ import requests
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, ConversationHandler, CallbackContext, MessageHandler, Filters, \
     PicklePersistence
+from main import pre_process
+
+from rc_modules import Proofing
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -16,6 +19,7 @@ BOT_TOKEN = environ['BOT_TOKEN']
 QA_HOST = environ['QA_HOST']
 QA_PORT = environ['QA_PORT']
 NUM_RANK = int(environ.get('NUM_RANK', 1))
+ENABLE_PROOFING = int(environ.get('ENABLE_PROOFING', 0))
 DATA_DIR = '.cache/data/'
 ASK_STATE = 1
 SETTING_STATE = 101
@@ -65,6 +69,14 @@ def help(update: Update, context: CallbackContext):
     )
 
 
+def verify_question(question: str):
+    if ENABLE_PROOFING:
+        p = Proofing()
+        return p.check_words(question)
+    else:
+        return question
+
+
 def start_ask(update: Update, context: CallbackContext) -> int:
     message_list = update.message.text.split(' ')
     if len(message_list) > 1:
@@ -96,14 +108,23 @@ def ask(update: Update, context: CallbackContext) -> int:
 
 
 def get_answer(query: str, update: Update, context: CallbackContext) -> int:
+    try:
+        processed_query = verify_question(query)
+    except ValueError as e:
+        update.message.reply_text(e.args[0])
+        return ASK_STATE
+
     algorithm = DEFAULT_ALGORITHM
     if 'algorithm' in context.user_data \
             and context.user_data['algorithm'] in SUPPORTED_ALGORITHM:
         algorithm = context.user_data['algorithm']
 
-    r = requests.get(f'http://{QA_HOST}:{QA_PORT}/{algorithm}',
-                     params={'q': query, 'num_rank': NUM_RANK})
-    if r.status_code != 200:
+    try:
+        r = requests.get(f'http://{QA_HOST}:{QA_PORT}/{algorithm}',
+                         params={'q': processed_query, 'num_rank': NUM_RANK})
+        if r.status_code != 200:
+            raise Exception()
+    except:
         update.message.reply_text(
             'Sistem sedang gangguan, silahkan coba lagi nanti')
         return ConversationHandler.END
