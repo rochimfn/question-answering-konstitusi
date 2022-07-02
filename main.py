@@ -1,38 +1,22 @@
 import logging
 import os
-from typing import List, Optional, TypedDict
 
 import pandas as pd
 import streamlit as st
 
-from rc_modules import Doc2vec, Proofing, ReturnType, Tfidf, Word2vec
+from rc_modules import Doc2vec, Proofing, Tfidf, Word2vec
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
 
 
-ENABLE_PROOFING = os.getenv('ENABLE_PROOFING', False)
+ENABLE_PROOFING = os.getenv('ENABLE_PROOFING', 0)
 NUM_RANK = int(os.getenv('NUM_RANK', 5))
 
 
-class PreProcessResult(TypedDict):
-    correct: bool
-    false_word: List[Optional[ReturnType]]
-
-
-def pre_process(question: str) -> PreProcessResult:
+def pre_process(question: str) -> str:
     p = Proofing()
-    result:  List[Optional[ReturnType]] = p.check_words(question)
-    false_word = list(filter(lambda x: x['exists'] is False, result))
-    return {'correct': len(false_word) == 0, 'false_word': false_word}
-
-
-def handle_not_proof(question: str, false_word: List[Optional[ReturnType]]):
-    st.write(f'Pertanyaan anda terdeteksi tidak valid: {question}')
-    for word in false_word:
-        suggestion = ', '.join(word['suggestion'])
-        st.write('Kata "{}" tidak ditemukan, saran: {}'
-                 .format(word['word'], suggestion))
+    return p.check_words(question)
 
 
 def main():
@@ -51,27 +35,33 @@ def main():
     show_doc2vec = st.checkbox('Doc2vec', value=True)
 
     if st.button('Tanyakan') or question != 'Apa tugas lembaga negara' and len(question) > 1:
-        result = pre_process(question) if ENABLE_PROOFING else False
-        if ENABLE_PROOFING and result['correct'] is not True:
-            handle_not_proof(question, result['false_word'])
+        try:
+            processed_question = pre_process(
+                question) if ENABLE_PROOFING else question
+        except ValueError as e:
+            st.write(f'Pertanyaan anda terdeteksi tidak valid: {question}')
+            st.write(e.args[0])
             show_tfidf = False
-            show_doc2vec = False
             show_word2vec = False
+            show_doc2vec = False
 
         if show_tfidf:
-            answer: pd.DataFrame = tfidf.ask(question, num_rank=NUM_RANK)
+            answer: pd.DataFrame = tfidf.ask(
+                processed_question, num_rank=NUM_RANK)
             answer['Rank'] = answer.reset_index().index + 1
             st.subheader('Tfidf')
             st.table(answer[['Rank', 'Response', 'Similarity']])
 
         if show_word2vec:
-            answer: pd.DataFrame = word2vec.ask(question, num_rank=NUM_RANK)
+            answer: pd.DataFrame = word2vec.ask(
+                processed_question, num_rank=NUM_RANK)
             answer['Rank'] = answer.reset_index().index + 1
             st.subheader('Word2vec')
             st.table(answer[['Rank', 'Response', 'Similarity']])
 
         if show_doc2vec:
-            answer: pd.DataFrame = doc2vec.ask(question, num_rank=NUM_RANK)
+            answer: pd.DataFrame = doc2vec.ask(
+                processed_question, num_rank=NUM_RANK)
             answer['Rank'] = answer.reset_index().index + 1
             st.subheader('Doc2vec')
             st.table(answer[['Rank', 'Response', 'Similarity']])
