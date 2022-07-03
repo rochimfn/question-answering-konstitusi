@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import requests
 from gensim.utils import simple_preprocess
+from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 
 
 class Proofing:
@@ -16,14 +17,17 @@ class Proofing:
     custom_dict_file = Path('.cache/custom_dict.json')
     custom_dict_url = 'https://gist.githubusercontent.com/rochimfn/' + \
                       '07e9c789ab1effb1de262e2d065ab400/' + \
-                      'raw/9e4c557d133cd3fad1c546dca1424ef56098da1c/custom_dict.json'
+                      'raw/bcb4d724a6496398aa22922a64bdbf9bdb3ef0b9/custom_dict.json'
     custom_dict: Optional[List[str]] = None
 
     context_dict_file = Path('.cache/konstitusi.json')
     context_dict_url = 'https://gist.githubusercontent.com/rochimfn/' + \
         '07e9c789ab1effb1de262e2d065ab400/' + \
-        'raw/9e4c557d133cd3fad1c546dca1424ef56098da1c/konstitusi.json'
+        'raw/bcb4d724a6496398aa22922a64bdbf9bdb3ef0b9/konstitusi.json'
     context_dict: Optional[List[str]] = None
+
+    factory = StemmerFactory()
+    stemmer = factory.create_stemmer()
 
     def __init__(self):
         if not (self.dict_file.is_file() and self.custom_dict_file.is_file()
@@ -63,10 +67,10 @@ class Proofing:
         if len(word) == 0:
             raise ValueError('Kata tidak boleh kosong!')
 
-        if word.lower() in self.dict:
-            return word.lower()
-        elif word.lower() in self.custom_dict:
+        if word.lower() in self.custom_dict:
             return self.custom_dict[word]
+        elif word.lower() in self.dict or self.stemmer.stem(word.lower()) in self.dict:
+            return word.lower()
         else:
             suggestion = ', '.join(self.suggest(word.lower()))
             raise ValueError(
@@ -78,7 +82,8 @@ class Proofing:
         if self.__fit_context(words):
             return ' '.join([self.check_word(word) for word in simple_preprocess(words)])
         else:
-            raise ValueError(f'"{words}" terdeteksi bukan pertanyaan tentang konstitusi Indonesia.')
+            raise ValueError(
+                f'"{words}" terdeteksi bukan pertanyaan tentang konstitusi Indonesia.')
 
     def __fit_context(self, question: str) -> bool:
         fit = False
@@ -86,9 +91,8 @@ class Proofing:
             if word in self.context_dict:
                 fit = True
                 break
-        
+
         return fit
-        
 
 
 if __name__ == '__main__':
