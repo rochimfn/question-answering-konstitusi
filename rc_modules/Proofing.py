@@ -16,11 +16,18 @@ class Proofing:
     custom_dict_file = Path('.cache/custom_dict.json')
     custom_dict_url = 'https://gist.githubusercontent.com/rochimfn/' + \
                       '07e9c789ab1effb1de262e2d065ab400/' + \
-                      'raw/91367da962eba01a5176c9cf2b425f876e77086f/custom_dict.json'
+                      'raw/9e4c557d133cd3fad1c546dca1424ef56098da1c/custom_dict.json'
     custom_dict: Optional[List[str]] = None
 
+    context_dict_file = Path('.cache/konstitusi.json')
+    context_dict_url = 'https://gist.githubusercontent.com/rochimfn/' + \
+        '07e9c789ab1effb1de262e2d065ab400/' + \
+        'raw/9e4c557d133cd3fad1c546dca1424ef56098da1c/konstitusi.json'
+    context_dict: Optional[List[str]] = None
+
     def __init__(self):
-        if not (self.dict_file.is_file() and self.custom_dict_file.is_file()):
+        if not (self.dict_file.is_file() and self.custom_dict_file.is_file()
+                and self.context_dict_file.is_file()):
             self.__download_dict()
         self.__load_dict()
 
@@ -35,11 +42,18 @@ class Proofing:
             if r.status_code == 200:
                 f.write(r.content)
 
+        r = requests.get(self.context_dict_url)
+        with open(self.context_dict_file, 'wb') as f:
+            if r.status_code == 200:
+                f.write(r.content)
+
     def __load_dict(self):
         with open(self.dict_file, 'r') as f:
             self.dict = f.read().split('\n')
         with open(self.custom_dict_file, 'r') as f:
             self.custom_dict = json.loads(f.read())
+        with open(self.context_dict_file, 'r') as f:
+            self.context_dict = json.loads(f.read())
 
     def suggest(self, word: str) -> List[Optional[str]]:
         dict_subset = [w for w in self.dict if w.startswith(word[0])]
@@ -61,7 +75,20 @@ class Proofing:
     def check_words(self, words: str) -> str:
         if len(words) == 0:
             return []
-        return ' '.join([self.check_word(word) for word in simple_preprocess(words)])
+        if self.__fit_context(words):
+            return ' '.join([self.check_word(word) for word in simple_preprocess(words)])
+        else:
+            raise ValueError(f'"{words}" terdeteksi bukan pertanyaan tentang konstitusi Indonesia.')
+
+    def __fit_context(self, question: str) -> bool:
+        fit = False
+        for word in simple_preprocess(question):
+            if word in self.context_dict:
+                fit = True
+                break
+        
+        return fit
+        
 
 
 if __name__ == '__main__':
@@ -76,7 +103,6 @@ if __name__ == '__main__':
         print(f'Word {false_word} in dictionary: {p.check_word(false_word)}')
     except ValueError as e:
         print(e.args[0])
-
 
     sentence = 'Bapak pulang kampung'
     print(f'Kalimat : {sentence}')
