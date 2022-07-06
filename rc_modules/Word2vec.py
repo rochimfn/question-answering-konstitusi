@@ -9,8 +9,7 @@ from gensim.models import word2vec
 from gensim.utils import simple_preprocess
 from sklearn.metrics.pairwise import cosine_similarity
 
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
-                    level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class Word2vecOptions(TypedDict):

@@ -8,8 +8,7 @@ from gensim.models import doc2vec
 from gensim.utils import simple_preprocess
 from sklearn.metrics.pairwise import cosine_similarity
 
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
-                    level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class Doc2vecOptions(TypedDict):
