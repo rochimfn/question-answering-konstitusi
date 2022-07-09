@@ -11,19 +11,17 @@ from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 class Proofing:
     dict_file = Path('.cache/dictionary.txt')
     dict_url = 'https://raw.githubusercontent.com/rochimfn/' + \
-               'kamus-kata-indonesia/main/manual-kamus-indonesia.txt'
+               'dataset-qa/main/manual-kamus-indonesia.txt'
     dict: Optional[List[str]] = None
 
     custom_dict_file = Path('.cache/custom_dict.json')
-    custom_dict_url = 'https://gist.githubusercontent.com/rochimfn/' + \
-                      '07e9c789ab1effb1de262e2d065ab400/' + \
-                      'raw/bcb4d724a6496398aa22922a64bdbf9bdb3ef0b9/custom_dict.json'
+    custom_dict_url = 'https://raw.githubusercontent.com/rochimfn/' + \
+        'dataset-qa/main/custom_dict.json'
     custom_dict: Optional[List[str]] = None
 
     context_dict_file = Path('.cache/konstitusi.json')
-    context_dict_url = 'https://gist.githubusercontent.com/rochimfn/' + \
-        '07e9c789ab1effb1de262e2d065ab400/' + \
-        'raw/bcb4d724a6496398aa22922a64bdbf9bdb3ef0b9/konstitusi.json'
+    context_dict_url = 'https://raw.githubusercontent.com/rochimfn/' + \
+        'dataset-qa/main/konstitusi.json'
     context_dict: Optional[List[str]] = None
 
     factory = StemmerFactory()
