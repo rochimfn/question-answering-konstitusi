@@ -4,3 +4,4 @@ __pycache__/
 .venv/
 venv/
 rc_ta.egg-info/
+.env
