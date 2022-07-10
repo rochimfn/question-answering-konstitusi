@@ -7,7 +7,6 @@ import requests
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, ConversationHandler, CallbackContext, MessageHandler, Filters, \
     PicklePersistence
-from main import pre_process
 
 from rc_modules import Proofing
 
@@ -112,7 +111,8 @@ def get_answer(query: str, update: Update, context: CallbackContext) -> int:
         processed_query = verify_question(query)
     except ValueError as e:
         update.message.reply_text(e.args[0])
-        return ASK_STATE
+        update.message.reply_text('Perintah /tanya dibatalkan.')
+        return ConversationHandler.END
 
     algorithm = DEFAULT_ALGORITHM
     if 'algorithm' in context.user_data \
