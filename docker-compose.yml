@@ -3,12 +3,14 @@ services:
   web:
     image: rochimfn/qa:latest
     build: .
+    restart: "unless-stopped"
     ports:
       - "8000:8000"
     entrypoint: python web.py
 
   bot:
     image: rochimfn/qa:latest
+    restart: "unless-stopped"
     volumes:
       - qa-data:/app/.cache/data
     environment:
