@@ -1,0 +1,25 @@
+version: '3'
+services:
+  web:
+    image: rochimfn/qa:latest
+    build: .
+    ports:
+      - "8000:8000"
+    entrypoint: python web.py
+
+  bot:
+    image: rochimfn/qa:latest
+    volumes:
+      - qa-data:/app/.cache/data
+    environment:
+      - BOT_TOKEN=$BOT_TOKEN
+      - QA_HOST=web
+      - NUM_RANK=1
+    entrypoint: python bot.py
+    depends_on:
+      - db
+
+
+
+volumes:
+  qa-data:
