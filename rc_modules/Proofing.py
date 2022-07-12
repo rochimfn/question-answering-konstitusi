@@ -76,7 +76,7 @@ class Proofing:
 
     def check_words(self, words: str) -> str:
         if len(words) == 0:
-            return []
+            return ''
         if self.__fit_context(words):
             return ' '.join([self.check_word(word) for word in simple_preprocess(words)])
         else:
