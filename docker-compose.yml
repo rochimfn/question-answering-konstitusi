@@ -19,9 +19,7 @@ services:
       - NUM_RANK=1
     entrypoint: python bot.py
     depends_on:
-      - db
-
-
+      - web
 
 volumes:
   qa-data:
