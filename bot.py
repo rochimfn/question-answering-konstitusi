@@ -35,7 +35,7 @@ bantuan    - Menampilkan bantuan
 
 def start(update, context):
     welcome = '''\
-    Selamat datang di (Under Development) Tanya Konstitusi!
+    Selamat datang di Tanya Konstitusi!
     
     Tentang:
     Bot ini akan membantu anda menjawab pertanyaan tentang konstitusi Indonesia.
